@@ -2,7 +2,7 @@ var fs = require('fs')
   , _ = require('underscore')
   , datafile = 'data/t.csv'
   , outFile = 'data/out.js'
-  , resolution = 1000   // Number of boxes on one line
+  , resolution = 100   // Number of boxes on one line
   , stepSizeLat, stepSizeLng
   , center
   , out
@@ -10,7 +10,7 @@ var fs = require('fs')
   , rawData, _data, data = []
   , minLon, minLat, maxLon, maxLat
   , boxedLat, boxedLng
-  , temp, i, j
+  , temp, i
   ;
   
 console.log("=== Loading raw data");
@@ -19,13 +19,29 @@ rawData = fs.readFileSync(datafile, 'utf8')
 
 console.log("=== Loading done, structuring data");
 
+// Get the corresponding hour for the string timestamp in GTM-8
+function convertToHour (recorded) {
+// console.log('---');
+// console.log(recorded);
+
+  var res = parseInt(recorded.substring(12, 14));
+  
+  // console.log(res);
+  
+  // if (res === 6) { console.log('!!!'); }
+  
+  // No need to cast to GMT+1, we're in a hackathon :)
+  
+  return res;
+}
+
 _data = rawData.split('\r\n');
 temp = _data[0].split(';');
 center = { lat: temp[1], lng: temp[2] };
 for (i = 1; i < (limit || _data.length); i += 1) {
   temp = _data[i].split(';');
   if (temp.length >= 3) {
-    data.push({lat: parseFloat(temp[1]), lng: parseFloat(temp[2]), count: 1});
+    data.push({lat: parseFloat(temp[1]), lng: parseFloat(temp[2]), count: 1, hour: convertToHour(temp[3])});
   }
 }
 
@@ -75,12 +91,21 @@ function getLngFromBoxLngNumber(_lngNumber) {
   return minLng + ((_lngNumber + 0.5) * stepSizeLng);
 }
 
+
+var dataByTime = [];
+for (var i = 0; i < 24; i += 1) { dataByTime[i] = []; }
+for (var i = 1; i < data.length; i += 1) {
+  dataByTime[data[i].hour].push(data[i]);
+}
+
+
+
 // Return clean boxed data
-// begin and end are the bounds of the period on which we want to integrate
-function getCleanBoxedData(begin, end) {
+function getCleanBoxedData(data) {
   var boxedData = []
     , maxCount = 0
     , cleanBoxedData = []
+    , i, j
     ;
 
   for (i = 0; i <= resolution; i += 1) {
@@ -119,8 +144,19 @@ function getCleanBoxedData(begin, end) {
 
 
 
-out = "var testData=" + JSON.stringify(getCleanBoxedData()) + ";";
-out += "var center = {lat: " + center.lat + ", lng: " + center.lng + "}"
+// Calculating clean boxed data by time
+var cleanBoxedDataByTime = {};
+for (i = 0; i < 24; i += 1) {
+  console.log("-------------------------- " + i);
+  cleanBoxedDataByTime[i] = getCleanBoxedData(dataByTime[i]);
+}
+
+
+
+out = "var testData=" + JSON.stringify(getCleanBoxedData(data)) + ";";
+out += "var center = {lat: " + center.lat + ", lng: " + center.lng + "};"
+out += "var timedData=" + JSON.stringify(cleanBoxedDataByTime) + ";";
+
 fs.writeFileSync(outFile, out, 'utf8');
 
 
