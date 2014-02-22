@@ -3,7 +3,7 @@ var fs = require('fs')
   , datafile = 'data/t.csv'
   , outFile = 'data/out.js'
   , resolution = 100   // Number of boxes on one line
-  , periods = 72   // 20 minutes periods
+  , periods = 1440   // 20 minutes periods
   , stepSizeLat, stepSizeLng
   , center
   , out
@@ -151,13 +151,23 @@ function getCleanBoxedData(data) {
 
 
 
+var globalMax = 0;
 
 // Calculating clean boxed data by time
 var cleanBoxedDataByTime = {};
 for (i = 0; i < periods; i += 1) {
   console.log("-------------------------- " + i);
   cleanBoxedDataByTime[i] = getCleanBoxedData(dataByTime[i]);
+  
+  globalMax = Math.max(globalMax, cleanBoxedDataByTime[i].max);
 }
+
+// Putting the same max everywhere
+for (i = 0; i < periods; i += 1) {
+  cleanBoxedDataByTime[i].max = globalMax;
+}
+
+
 
 
 

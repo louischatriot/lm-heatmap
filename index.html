@@ -125,11 +125,29 @@ window.onload = function(){
 		heatmap.toggle();
 	};
 
+  
+  // Morph it
+  function next(step) {
+    heatmap.setDataSet(timedData[step]);
+    
+    setTimeout(function () {
+      next(step + 1);
+    }, 400);
+  }
+  
+  
 	
 	// this is important, because if you set the data set too early, the latlng/pixel projection doesn't work
 	google.maps.event.addListenerOnce(map, "idle", function(){
-		heatmap.setDataSet(testData);
+		//heatmap.setDataSet(testData);
+    
+    next(0);
 	});
+  
+  
+  
+ 
+  
 };
 
 </script>
