@@ -3,6 +3,7 @@ var fs = require('fs')
   , datafile = 'data/t.csv'
   , outFile = 'data/out.js'
   , resolution = 100   // Number of boxes on one line
+  , periods = 72   // 20 minutes periods
   , stepSizeLat, stepSizeLng
   , center
   , out
@@ -24,9 +25,14 @@ function convertToHour (recorded) {
 // console.log('---');
 // console.log(recorded);
 
-  var res = parseInt(recorded.substring(12, 14));
+  var hours = parseInt(recorded.substring(12, 14))
+    , minutes = parseInt(recorded.substring(15, 17))
+    ;
   
-  // console.log(res);
+  // console.log(hours);
+  // console.log(minutes);
+  
+  var res = Math.floor((60 * hours + minutes) / (24 * 60 / periods));
   
   // if (res === 6) { console.log('!!!'); }
   
@@ -41,7 +47,7 @@ center = { lat: temp[1], lng: temp[2] };
 for (i = 1; i < (limit || _data.length); i += 1) {
   temp = _data[i].split(';');
   if (temp.length >= 3) {
-    data.push({lat: parseFloat(temp[1]), lng: parseFloat(temp[2]), count: 1, hour: convertToHour(temp[3])});
+    data.push({lat: parseFloat(temp[1]), lng: parseFloat(temp[2]), count: 1, period: convertToHour(temp[3]), recorded: temp[3]});
   }
 }
 
@@ -93,9 +99,9 @@ function getLngFromBoxLngNumber(_lngNumber) {
 
 
 var dataByTime = [];
-for (var i = 0; i < 24; i += 1) { dataByTime[i] = []; }
+for (var i = 0; i < periods; i += 1) { dataByTime[i] = []; }
 for (var i = 1; i < data.length; i += 1) {
-  dataByTime[data[i].hour].push(data[i]);
+  dataByTime[data[i].period].push(data[i]);
 }
 
 
@@ -144,9 +150,11 @@ function getCleanBoxedData(data) {
 
 
 
+
+
 // Calculating clean boxed data by time
 var cleanBoxedDataByTime = {};
-for (i = 0; i < 24; i += 1) {
+for (i = 0; i < periods; i += 1) {
   console.log("-------------------------- " + i);
   cleanBoxedDataByTime[i] = getCleanBoxedData(dataByTime[i]);
 }
